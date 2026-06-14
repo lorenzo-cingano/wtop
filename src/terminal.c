@@ -81,6 +81,18 @@ TermSize term_size(void)
     return ts;
 }
 
+void term_window_origin(int *x, int *y)
+{
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (GetConsoleScreenBufferInfo(g_out, &info)) {
+        *x = info.srWindow.Left;
+        *y = info.srWindow.Top;
+    } else {
+        *x = 0;
+        *y = 0;
+    }
+}
+
 void term_frame_begin(void)
 {
     g_buf_len = 0;

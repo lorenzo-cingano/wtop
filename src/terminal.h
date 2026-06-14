@@ -22,6 +22,10 @@ void term_shutdown(void);
 /* Current console window dimensions in character cells. */
 TermSize term_size(void);
 
+/* Top-left of the console window within the screen buffer, in cells. Mouse
+ * event coordinates are buffer-relative; subtract this to get window cells. */
+void term_window_origin(int *x, int *y);
+
 /* Frame buffer: accumulate output, then flush once per frame. */
 void term_frame_begin(void);
 void term_puts(const char *s);

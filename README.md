@@ -66,12 +66,36 @@ The display refreshes every 1.5 seconds.
 | `↑` / `↓` or `k` / `j` | Move selection up / down |
 | `PgUp` / `PgDn` | Page up / down |
 | `Home` / `End` or `g` / `G` | Jump to first / last process |
+| `<` / `>` | Cycle the sort column left / right |
+| `Space` | Tag / untag the selected process |
+| `F1` or `?` | Show the help overlay |
 | `F2` | Open the setup / configuration screen |
 | `F4` or `/` | Filter the process list by name |
 | `F5` or `t` | Toggle tree view (parent/child hierarchy) |
 | `Tab` or `F6` | Switch between the process list and the I/O tab |
-| `F9` | Kill the selected process (asks `y/N` first) |
+| `F9` | Kill the selected process, or every tagged process (asks `y/N` first) |
 | `q` / `Esc` | Quit |
+
+### Mouse
+
+The interface is fully clickable. Console mouse input works on the classic
+Windows console host as well as Windows Terminal, and the keyboard keeps working
+exactly as before.
+
+- Click a process row to select it.
+- Click a column header (`PID`, `CPU%`, `MEM`, `THR`, `COMMAND`) to sort by it;
+  click the active column again to reverse the order.
+- Scroll the wheel to move up and down the list.
+- Click the tabs at the top (`Processes` / `I/O`) to switch screens.
+- Click any button in the bottom key bar to trigger it.
+
+### Tagging (`Space`)
+
+`Space` tags (or untags) the selected process and advances to the next row, so
+you can mark several quickly. Tagged processes are highlighted and counted in the
+summary line, and the tags follow each process by PID across refreshes. While one
+or more processes are tagged, `F9` terminates the whole tagged set after a single
+`y/N` confirmation instead of just the selected process.
 
 ### Filtering (`F4` / `/`)
 
@@ -145,6 +169,12 @@ Settings are saved to `%APPDATA%\wtop\wtoprc` on exit and reloaded at startup.
 - **I/O tab** - `Tab` (or `F6`) switches to a network + disk throughput view
   with auto-scaling Rx/Tx and read/write meters and per-interface / per-disk
   breakdowns.
+- **Mouse support** - click rows to select, column headers to sort, the top tabs
+  to switch screens, and key-bar buttons to act; the wheel scrolls the list.
+  Driven by `ReadConsoleInput`, so it works on the classic console host too.
+- **Tagging and bulk kill** - `Space` tags processes (tracked by PID across
+  refreshes) and `F9` then terminates the whole tagged set at once.
+- **Help overlay** - `F1` (or `?`) lists every key binding over the current view.
 - **Rendering** - alternate screen buffer with VT escape sequences, double-
   buffered per frame to avoid flicker.
 - **Self-install** - `--install` / `--uninstall` copy wtop into `%APPDATA%` and
@@ -152,15 +182,26 @@ Settings are saved to `%APPDATA%\wtop\wtoprc` on exit and reloaded at startup.
 
 ## Architecture
 
+The TUI is split into a console output layer, an input layer, reusable widgets,
+a UI core that runs the loop, and one module per screen. Each screen exposes a
+render function and an event handler behind a small dispatch table, so screens
+are independent and `main.c` stays thin.
+
 | File          | Responsibility                                          |
 |---------------|---------------------------------------------------------|
-| `terminal.c`  | Console/VT setup, alternate screen, frame buffering     |
+| `terminal.c`  | Console/VT output setup, alternate screen, frame buffering |
+| `input.c`     | Keyboard + mouse + resize events via `ReadConsoleInput`, normalized |
+| `widgets.c`   | Shared meters, key bar, tab bar, layout, and click hitboxes |
+| `ui.c`        | Run loop, view dispatch, help overlay, status line, shared state |
+| `view_proc.c` | Process screen: meters, table, filter, tree, tagging, kill |
+| `view_io.c`   | I/O screen: network + disk throughput                   |
+| `view_setup.c`| Setup / configuration screen                            |
 | `sysinfo.c`   | Overall + per-core CPU and memory stats                 |
 | `proclist.c`  | Process enumeration (one syscall), CPU%, sort + filter + tree |
 | `iostat.c`    | Network (`GetIfTable2`) + disk (`IOCTL_DISK_PERFORMANCE`) rates |
 | `config.c`    | Load/save settings to `%APPDATA%\wtop\wtoprc`           |
 | `install.c`   | `--install` / `--uninstall`: copy to `%APPDATA%` + PATH  |
-| `main.c`      | Sample/render loop, navigation, setup screen, layout    |
+| `main.c`      | CLI args, startup/teardown, hands off to the UI loop     |
 
 ## Notes & limitations
 
