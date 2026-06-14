@@ -3,6 +3,8 @@
 An htop-style process viewer for Windows, written in pure C using only the
 Win32 API and the C standard library - no external dependencies.
 
+![wtop process list](screenshots/wtop-screenshot-main.png)
+
 ## Build
 
 Requires a C compiler (tested with GCC 16 from MSYS2 UCRT64).
@@ -88,7 +90,11 @@ their ancestors so the path to each match stays visible. The summary line shows
 ### I/O tab (`Tab` / `F6`)
 
 Switches to a full-screen view of system throughput, and `Tab`/`Esc` returns to
-the process list. It shows:
+the process list.
+
+![wtop I/O tab](screenshots/wtop-screenshot-io.png)
+
+It shows:
 
 - **Network** - aggregate receive (`Rx`) and transmit (`Tx`) meters, plus a
   per-interface breakdown of `RX/s` and `TX/s`. Loopback, down, and NDIS filter
