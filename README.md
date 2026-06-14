@@ -1,5 +1,7 @@
 # wtop
 
+[![Release](https://img.shields.io/github/v/release/lorenzo-cingano/wtop)](https://github.com/lorenzo-cingano/wtop/releases/latest)
+
 An htop-style process viewer for Windows, written in pure C using only the
 Win32 API and the C standard library - no external dependencies.
 
