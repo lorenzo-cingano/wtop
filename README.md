@@ -174,6 +174,7 @@ Settings are saved to `%APPDATA%\wtop\wtoprc` on exit and reloaded at startup.
   its PID was reused, a child may attach to the wrong parent (a limitation
   shared with other process viewers).
 
-## Copyright
+## License
 
-© 2026 Cingano Development. All rights reserved.
+© 2026 Cingano Development. Released under the BSD Zero-Clause License (0BSD) -
+the most permissive license, imposing no conditions on use. See [LICENSE](LICENSE).
