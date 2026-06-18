@@ -11,6 +11,7 @@
 static HANDLE g_out = INVALID_HANDLE_VALUE;
 static DWORD  g_saved_out_mode = 0;
 static UINT   g_saved_cp = 0;
+static COORD  g_saved_buf_size = { 0, 0 };
 
 /* Growable byte buffer for one frame's worth of output. */
 static char  *g_buf = NULL;
@@ -48,6 +49,14 @@ bool term_init(void)
     g_saved_cp = GetConsoleOutputCP();
     SetConsoleOutputCP(CP_UTF8);
 
+    /* Remember the main buffer's size *before* switching to the alternate
+     * screen. The alternate buffer is sized to the window (no scrollback),
+     * and on exit conhost can leave the main buffer at that reduced size,
+     * dropping the scrollbars. term_shutdown() restores this explicitly. */
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (GetConsoleScreenBufferInfo(g_out, &info))
+        g_saved_buf_size = info.dwSize;
+
     /* Alternate screen buffer + hide cursor + clear. */
     const char *setup = "\x1b[?1049h\x1b[?25l\x1b[2J\x1b[H";
     DWORD written;
@@ -65,6 +74,26 @@ void term_shutdown(void)
     SetConsoleMode(g_out, g_saved_out_mode);
     if (g_saved_cp)
         SetConsoleOutputCP(g_saved_cp);
+
+    /* The WriteFile above has already switched conhost back to the main
+     * buffer, but that buffer may have been shrunk to the window size while
+     * we were on the alternate screen, leaving the console without
+     * scrollback (no scrollbars). This is sticky under the Visual Studio
+     * debugger, which reuses the console session for later programs. Force
+     * the original buffer size back, clamped to the current window so the
+     * call cannot fail on a buffer-smaller-than-window error. */
+    if (g_saved_buf_size.X > 0 && g_saved_buf_size.Y > 0) {
+        COORD size = g_saved_buf_size;
+        CONSOLE_SCREEN_BUFFER_INFO info;
+        if (GetConsoleScreenBufferInfo(g_out, &info)) {
+            SHORT win_w = (SHORT)(info.srWindow.Right - info.srWindow.Left + 1);
+            SHORT win_h = (SHORT)(info.srWindow.Bottom - info.srWindow.Top + 1);
+            if (size.X < win_w) size.X = win_w;
+            if (size.Y < win_h) size.Y = win_h;
+        }
+        SetConsoleScreenBufferSize(g_out, size);
+    }
+
     free(g_buf);
     g_buf = NULL;
     g_buf_len = g_buf_cap = 0;
