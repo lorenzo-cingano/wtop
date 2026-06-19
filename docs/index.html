@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wtop - an htop-style process viewer for Windows</title>
+  <meta name="description" content="wtop is an htop-style process viewer for Windows. Pure C, Win32 only, zero dependencies. Per-core CPU and memory meters, a sortable process table, tree view, filter, tagging, kill, and a live I/O tab.">
+  <meta name="theme-color" content="#0a0d13">
+  <meta name="color-scheme" content="dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="wtop - an htop-style process viewer for Windows">
+  <meta property="og:description" content="htop, but native Windows. Pure C, Win32 only, zero dependencies, one small exe.">
+  <meta property="og:image" content="assets/wtop-screenshot-main.png">
+  <meta property="og:url" content="https://lorenzo-cingano.github.io/wtop/">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#what">Skip to content</a>
+
+  <!-- Top tab bar: the htop chrome, reused as site nav -->
+  <header class="topbar" id="top">
+    <nav class="topbar__inner" aria-label="Primary">
+      <a class="brand" href="#top" aria-label="wtop home">
+        <img class="brand__mark" src="assets/favicon.svg" alt="" width="28" height="28" aria-hidden="true">
+        <span class="brand__word">wtop</span>
+      </a>
+      <div class="tabs" role="tablist" aria-label="Sections">
+        <a class="tab tab--active" href="#what">Processes</a>
+        <a class="tab" href="#io">I/O</a>
+        <a class="tab" href="#install">Install</a>
+        <a class="tab" href="#keys">Keys</a>
+      </div>
+      <div class="topbar__actions">
+        <a class="btn btn--ghost" href="https://github.com/lorenzo-cingano/wtop" rel="noopener">GitHub</a>
+        <a class="btn btn--solid" href="#install">Get wtop</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HERO: the thesis is a living terminal -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__pitch">
+        <p class="eyebrow"><span class="eyebrow__dot"></span>Windows process viewer</p>
+        <h1 class="hero__title" id="hero-title">htop, but it<span class="apos">'</span>s native Windows.</h1>
+        <p class="hero__lede">
+          A fast, keyboard and mouse driven process monitor for the Windows console.
+          Per-core CPU meters, a sortable process table, tree view, and a live I/O tab.
+        </p>
+
+        <ul class="speclist" aria-label="What wtop is built from">
+          <li><span class="speclist__k">written in</span> pure C</li>
+          <li><span class="speclist__k">uses only</span> the Win32 API</li>
+          <li><span class="speclist__k">depends on</span> nothing else</li>
+          <li><span class="speclist__k">ships as</span> one small exe</li>
+        </ul>
+
+        <div class="install">
+          <span class="install__label">Install with winget</span>
+          <div class="install__row">
+            <code class="install__cmd"><span class="install__prompt">&gt;</span> winget install Cingano.wtop</code>
+            <button class="copy" type="button" data-copy="winget install Cingano.wtop" aria-label="Copy install command">
+              <span class="copy__text">Copy</span>
+            </button>
+          </div>
+          <p class="install__alt">No package manager? <a href="#build">Build it from source</a> with one command.</p>
+        </div>
+
+        <div aria-live="polite" class="sr-only" id="copy-status"></div>
+      </div>
+
+      <!-- Live terminal recreation -->
+      <div class="hero__term">
+        <div class="term" id="hero-term" role="img" aria-label="wtop running in a terminal: per-core CPU meters, a memory meter, and a live process table sorted by CPU usage">
+          <div class="term__chrome" aria-hidden="true">
+            <span class="term__path"><span class="term__ico">&#9608;</span> wtop.exe</span>
+            <span class="term__win">
+              <span class="term__wbtn term__wbtn--min"></span>
+              <span class="term__wbtn term__wbtn--max"></span>
+              <span class="term__wbtn term__wbtn--close"></span>
+            </span>
+          </div>
+          <div class="term__tabs" aria-hidden="true">
+            <span class="term__tab term__tab--active">Processes</span>
+            <span class="term__tab">I/O</span>
+          </div>
+          <div class="term__body" id="term-body">
+            <noscript>
+              <img src="assets/wtop-screenshot-main.png" alt="wtop process list with per-core CPU meters and a sortable process table" width="1280">
+            </noscript>
+          </div>
+          <div class="term__keybar" aria-hidden="true">
+            <span class="kb"><b>F1</b><i>Help</i></span>
+            <span class="kb"><b>F2</b><i>Setup</i></span>
+            <span class="kb"><b>F4</b><i>Filter</i></span>
+            <span class="kb"><b>F5</b><i>Tree</i></span>
+            <span class="kb"><b>F9</b><i>Kill</i></span>
+            <span class="kb"><b>q</b><i>Quit</i></span>
+          </div>
+        </div>
+        <p class="term__caption" aria-hidden="true">A live mock. <a href="assets/wtop-screenshot-main.png">See the real thing.</a></p>
+      </div>
+    </section>
+
+    <!-- Meter divider + features -->
+    <section class="block" id="what" aria-labelledby="what-title">
+      <div class="divider" aria-hidden="true">
+        <span class="divider__bar"><span class="divider__fill"></span></span>
+        <span class="divider__label">What it does</span>
+      </div>
+      <h2 class="block__title" id="what-title">Everything htop gives you, mapped to a key.</h2>
+      <p class="block__intro">
+        wtop reads the whole process list from a single system call, so a refresh costs about
+        a fifth of a percent of one core. Every view below is one keystroke away.
+      </p>
+
+      <div class="cards">
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">F5</span> Tree view</h3>
+          <p>See the parent and child hierarchy with connector glyphs, sorted under each parent. Filter inside the tree and the path to every match stays visible.</p>
+          <pre class="card__code"><code>WindowsTerminal.exe
+ <span class="tree">&#9500;&#9472;</span> OpenConsole.exe
+ <span class="tree">&#9492;&#9472;</span> pwsh.exe
+     <span class="tree">&#9492;&#9472;</span> wtop.exe</code></pre>
+        </article>
+
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">F4</span> Filter</h3>
+          <p>Type a substring to narrow the list by name, case insensitive, updating live as you type. The summary line shows matched over total.</p>
+          <pre class="card__code"><code><span class="muted">/</span>chrome<span class="cursor">&#9608;</span>
+<span class="dim">14 matched / 233 total</span></code></pre>
+        </article>
+
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">Space</span> Tag &amp; bulk kill</h3>
+          <p>Tag processes with Space, tracked by PID across refreshes. Then F9 ends the whole tagged set after a single confirmation.</p>
+          <pre class="card__code"><code><span class="tag">&#9656; node.exe</span>
+<span class="tag">&#9656; node.exe</span>
+  python.exe
+<span class="dim">2 tagged</span></code></pre>
+        </article>
+
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">F9</span> Kill</h3>
+          <p>End the selected process after a y or N confirmation. Run from an elevated console to terminate protected or elevated processes.</p>
+          <pre class="card__code"><code>Kill process 7264
+chrome.exe ? <span class="warn">[y/N]</span><span class="cursor">&#9608;</span></code></pre>
+        </article>
+
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">F2</span> Setup</h3>
+          <p>Tune the refresh interval, sort column and direction, per-core or combined meters, and tree mode. Settings persist between runs.</p>
+          <pre class="card__code"><code>Refresh   <span class="sel">1.5 s</span>
+Sort by   CPU%
+Meters    per-core
+Tree      off</code></pre>
+        </article>
+
+        <article class="card">
+          <h3 class="card__title"><span class="keycap">Mouse</span> Click anything</h3>
+          <p>Click a row to select, a header to sort, a tab to switch screens, a key-bar button to act, and scroll the wheel. Works on the classic console host too.</p>
+          <pre class="card__code"><code><span class="hdr">PID  CPU%</span><span class="hdr-on"> MEM </span><span class="hdr">THR</span>
+<span class="dim">click a header to sort &#8593;&#8595;</span></code></pre>
+        </article>
+      </div>
+    </section>
+
+    <!-- I/O tab -->
+    <section class="block block--io" id="io" aria-labelledby="io-title">
+      <div class="io">
+        <div class="io__text">
+          <div class="divider" aria-hidden="true">
+            <span class="divider__bar divider__bar--io"><span class="divider__fill"></span></span>
+            <span class="divider__label">Tab / F6</span>
+          </div>
+          <h2 class="block__title" id="io-title">A full screen of live throughput.</h2>
+          <p class="block__intro">
+            One keystroke flips to the I/O tab: aggregate receive and transmit meters with a
+            per-interface breakdown, and aggregate read and write meters with a per-drive
+            breakdown including a busy percentage.
+          </p>
+          <ul class="io__points">
+            <li><b>Accurate at any rate.</b> Rates come from the byte-counter delta over real elapsed time, so they hold up at every refresh interval.</li>
+            <li><b>Auto-scaling meters.</b> Bars track a decaying recent peak with a sensible floor, so quiet and busy periods both read clearly.</li>
+            <li><b>No admin needed.</b> Network counters come from GetIfTable2, disk counters from IOCTL_DISK_PERFORMANCE. Both work without elevation.</li>
+          </ul>
+        </div>
+        <figure class="io__shot">
+          <img src="assets/wtop-screenshot-io.png" alt="wtop I/O tab showing network receive and transmit meters with a per-interface breakdown, and disk read and write meters with a per-drive breakdown" loading="lazy" width="1916" height="954">
+          <figcaption>Network and disk throughput, side by side.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Install -->
+    <section class="block" id="install" aria-labelledby="install-title">
+      <div class="divider" aria-hidden="true">
+        <span class="divider__bar"><span class="divider__fill"></span></span>
+        <span class="divider__label">Install</span>
+      </div>
+      <h2 class="block__title" id="install-title">Three ways in. All of them quick.</h2>
+
+      <div class="install-grid">
+        <article class="iblock">
+          <h3 class="iblock__title">winget</h3>
+          <p class="iblock__note">The fastest path on Windows 10 and 11.</p>
+          <div class="codeblock">
+            <code><span class="install__prompt">&gt;</span> winget install Cingano.wtop</code>
+            <button class="copy copy--sm" type="button" data-copy="winget install Cingano.wtop" aria-label="Copy winget command"><span class="copy__text">Copy</span></button>
+          </div>
+        </article>
+
+        <article class="iblock" id="build">
+          <h3 class="iblock__title">Build from source</h3>
+          <p class="iblock__note">A C compiler is all you need. Tested with GCC from MSYS2 UCRT64.</p>
+          <div class="codeblock">
+            <code><span class="install__prompt">&gt;</span> make</code>
+            <button class="copy copy--sm" type="button" data-copy="make" aria-label="Copy build command"><span class="copy__text">Copy</span></button>
+          </div>
+          <p class="iblock__sub">or compile directly</p>
+          <div class="codeblock codeblock--wrap">
+            <code><span class="install__prompt">&gt;</span> gcc -O2 -Wall -Wextra -std=c11 src/*.c -o wtop.exe</code>
+            <button class="copy copy--sm" type="button" data-copy="gcc -O2 -Wall -Wextra -std=c11 src/*.c -o wtop.exe" aria-label="Copy compile command"><span class="copy__text">Copy</span></button>
+          </div>
+        </article>
+
+        <article class="iblock">
+          <h3 class="iblock__title">Put it on PATH</h3>
+          <p class="iblock__note">Install for the current user, no admin rights. Open a new console and just type wtop.</p>
+          <div class="codeblock">
+            <code><span class="install__prompt">&gt;</span> wtop --install</code>
+            <button class="copy copy--sm" type="button" data-copy="wtop --install" aria-label="Copy self-install command"><span class="copy__text">Copy</span></button>
+          </div>
+          <p class="iblock__sub">It copies into %APPDATA%\wtop and adds that folder to your per-user PATH. Remove it any time with <code class="inline">wtop --uninstall</code>.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Keys reference -->
+    <section class="block" id="keys" aria-labelledby="keys-title">
+      <div class="divider" aria-hidden="true">
+        <span class="divider__bar"><span class="divider__fill"></span></span>
+        <span class="divider__label">Reference</span>
+      </div>
+      <h2 class="block__title" id="keys-title">Every key, one screen.</h2>
+      <p class="block__intro">The display refreshes every 1.5 seconds by default. Navigation works from the keyboard and the mouse at the same time.</p>
+
+      <div class="keys-grid">
+        <dl class="keytable">
+          <div class="keyrow"><dt><kbd>&#8593;</kbd><kbd>&#8595;</kbd> <span class="or">or</span> <kbd>k</kbd><kbd>j</kbd></dt><dd>Move selection up or down</dd></div>
+          <div class="keyrow"><dt><kbd>PgUp</kbd><kbd>PgDn</kbd></dt><dd>Page up or down</dd></div>
+          <div class="keyrow"><dt><kbd>Home</kbd><kbd>End</kbd> <span class="or">or</span> <kbd>g</kbd><kbd>G</kbd></dt><dd>Jump to first or last process</dd></div>
+          <div class="keyrow"><dt><kbd>&lt;</kbd><kbd>&gt;</kbd></dt><dd>Cycle the sort column left or right</dd></div>
+          <div class="keyrow"><dt><kbd>Space</kbd></dt><dd>Tag or untag the selected process</dd></div>
+        </dl>
+        <dl class="keytable">
+          <div class="keyrow"><dt><kbd>F1</kbd> <span class="or">or</span> <kbd>?</kbd></dt><dd>Show the help overlay</dd></div>
+          <div class="keyrow"><dt><kbd>F2</kbd></dt><dd>Open the setup screen</dd></div>
+          <div class="keyrow"><dt><kbd>F4</kbd> <span class="or">or</span> <kbd>/</kbd></dt><dd>Filter the list by name</dd></div>
+          <div class="keyrow"><dt><kbd>F5</kbd> <span class="or">or</span> <kbd>t</kbd></dt><dd>Toggle tree view</dd></div>
+          <div class="keyrow"><dt><kbd>Tab</kbd> <span class="or">or</span> <kbd>F6</kbd></dt><dd>Switch between the list and I/O</dd></div>
+          <div class="keyrow"><dt><kbd>F9</kbd></dt><dd>Kill selected or every tagged process</dd></div>
+          <div class="keyrow"><dt><kbd>q</kbd> <span class="or">or</span> <kbd>Esc</kbd></dt><dd>Quit</dd></div>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer: the htop key bar -->
+  <footer class="footer">
+    <div class="footer__keybar">
+      <span class="kb"><b>F1</b><i>Help</i></span>
+      <span class="kb"><b>F2</b><i>Setup</i></span>
+      <span class="kb"><b>F4</b><i>Filter</i></span>
+      <span class="kb"><b>F5</b><i>Tree</i></span>
+      <span class="kb"><b>Tab</b><i>I/O</i></span>
+      <span class="kb"><b>F9</b><i>Kill</i></span>
+      <span class="kb"><b>q</b><i>Quit</i></span>
+    </div>
+    <div class="footer__meta">
+      <p class="footer__copy">&copy; 2026 Cingano Development. Released under the BSD Zero-Clause License (0BSD).</p>
+      <p class="footer__links">
+        <a href="https://github.com/lorenzo-cingano/wtop" rel="noopener">Source</a>
+        <span class="footer__sep" aria-hidden="true">&#183;</span>
+        <a href="https://github.com/lorenzo-cingano/wtop/releases/latest" rel="noopener">Releases</a>
+        <span class="footer__sep" aria-hidden="true">&#183;</span>
+        <a href="https://github.com/lorenzo-cingano/wtop/issues" rel="noopener">Issues</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
