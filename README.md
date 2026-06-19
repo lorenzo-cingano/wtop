@@ -2,6 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/lorenzo-cingano/wtop)](https://github.com/lorenzo-cingano/wtop/releases/latest)
 [![Website](https://img.shields.io/badge/website-wtop-2560d4)](https://lorenzo-cingano.github.io/wtop/)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?logo=buymeacoffee&logoColor=000000)](https://www.buymeacoffee.com/lorenzo.cingano)
 
 An htop-style process viewer for Windows, written in pure C using only the
 Win32 API and the C standard library - no external dependencies.
